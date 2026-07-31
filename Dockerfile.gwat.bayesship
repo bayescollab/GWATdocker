@@ -1,0 +1,57 @@
+# Pull the image from the online repository with all the dependencies pre-installed 
+# FROM scottperkins/gw.base.deps:latest 
+## STAGE 0: Install base dependencies
+FROM gwatubuntu AS base-build
+
+ENV CPATH="/usr/local/include"
+ENV LIBRARY_PATH="/usr/local/lib64:/usr/local/lib"
+ENV LD_LIBRARY_PATH="/usr/local/lib64:/usr/local/lib"
+
+# Install any other dependencies (like custom repositories)
+
+## PACKAGE INSTALL GUIDE ##
+    # doxygen - Documentation system for C, C++, Java, Python, and other languages [RECOMMENDS: doxygen-latex]
+    # vim - Text editor
+    # nlohmann-json3-dev - JSON for C++ [REQUIRED FOR: BAYESSHIP]
+    # libarmadillo-dev - 
+
+RUN apt-get update \
+&& DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -yq \
+    nlohmann-json3-dev \
+    libarmadillo-dev \
+    doxygen \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+## STAGE 1: Build BayesShip
+FROM base-build AS bayes-build
+
+# Make the directory for BayesShip
+RUN mkdir /opt/BayesShip
+# Copy all source files into the container
+COPY BayesShip/ /opt/BayesShip/
+# Make the current working directory the build directory
+WORKDIR /opt/BayesShip/build/
+# Configure the installation. Make sure build directory is clean
+RUN rm -rf * && cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../
+# Compile and install the library
+RUN make -j 4 install
+WORKDIR /opt
+RUN rm -rf /opt/BayesShip/
+
+## STAGE 2: Build GWAT
+FROM bayes-build AS gwat-build
+
+# Install GWAT. Similar steps as for BayesShip
+RUN mkdir /opt/gw_analysis_tools
+COPY gw_analysis_tools/ /opt/gw_analysis_tools/
+WORKDIR /opt/gw_analysis_tools/build
+RUN rm -rf * && cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../
+RUN make -j 4 && make install 
+WORKDIR /opt
+RUN rm -rf /opt/gw_analysis_tools
+
+# Install jupyterlab for post-processing of data
+# RUN pip install --no-cache-dir \
+#     jupyter \
+#     jupyterlab
