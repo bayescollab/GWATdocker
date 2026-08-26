@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS gwatubuntu
+FROM ubuntu:26.04 AS gwatubuntu
 
 # Path to Python environment to be created
 ARG PYENV=/usr/gwatpyenv
@@ -53,38 +53,6 @@ RUN apt-get update \
     libhdf5-dev \
     && rm -rf /var/lib/apt/lists/*
     
-
-## PYTHON PIP installs ##
-    #[REQUIRED FOR: LALSUITE]
-
-# Create Python environment to manage packages
-RUN python3 -m venv ${PYENV}
-# Add the environment to PATH
-ENV PATH="${PYENV}/bin:$PATH"
-# Install PIP packages with the environment
-RUN pip install --no-cache-dir \
-    numpy \
-    scipy \
-    pandas \
-    matplotlib
-
-## LALSUITE FRAME install ##
-WORKDIR /usr/local/LALFRAME
-RUN git clone https://git.ligo.org/virgo/virgoapp/Fr.git
-WORKDIR /usr/local/LALFRAME/Fr
-RUN cmake . && make && make install 
-
-## LALSUITE METAIO install ##
-WORKDIR /usr/local/LALMETAIO
-RUN wget http://software.ligo.org/lscsoft/source/metaio-8.4.0.tar.gz && tar -zxf metaio-8.4.0.tar.gz  
-WORKDIR /usr/local/LALMETAIO/metaio-8.4.0
-RUN ./configure --prefix=/usr/local && make && make install 
-
-## LALSUITE install ##
-WORKDIR /usr/local
-RUN git clone https://git.ligo.org/lscsoft/lalsuite.git
-WORKDIR /usr/local/lalsuite
-RUN ./00boot && ./configure --prefix=/usr/local && make && make install 
 
 ## ADOL-C install ##
 WORKDIR /opt/adolc
