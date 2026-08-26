@@ -4,9 +4,9 @@ Developing in GWAT is fairly straightforward, and we have been working towards m
 
 - **Lighter images**: The Debian-based image `gw.base.deps` has been switched to the lighter Ubuntu base. APT packages are downloaded without their recommended installs and the cached lists are cleared after their installation.
 
-- **Updated software**: With Ubuntu 24.04 (noble), PIP is a bit more restrained now in order to avoid conflicts with software installed via APT. A Python environment is now set up and added to `PATH` to handle 1) PIP packages and 2) BayesShip packages.
+- **Updated software**: With Ubuntu >=24.04, PIP is a bit more restrained now in order to avoid conflicts with software installed via APT. A Python environment is now set up and added to `PATH` to handle 1) PIP packages and 2) BayesShip packages.
 
-- **Multi-stage builds**: Installing the code comes in two main stages: the building of the bse image, here referred to as `gwatubuntu`, and the installation of BayesShip and GWAT on top of this image. These two codes are handled in separate stages. See their installation below.
+- **Multi-stage builds**: Installing the code comes in two main stages: the building of the base image, here referred to as `gwatubuntu`, and the installation of BayesShip and GWAT on top of this image. These two codes are handled in separate stages. See their installation below.
 
 ## Installation
 
@@ -16,20 +16,20 @@ The first container to build is `gwatubuntu`, which is meant to take the place o
 .
 ├── gw_analysis_tools/
 ├── BayesShip/
-├── Dockerfile.gwatubuntu
-└── Dockerfile.gwat.bayesship
+├── GWATdocker/Dockerfile.gwatubuntu
+└── GWATdocker/Dockerfile.gwat.bayesship
 ```
 
 run the command
 
 ```sh
-docker build -f Dockerfile.gwatubuntu -t gwatubuntu .
+docker build -f GWATdocker/Dockerfile.gwatubuntu -t gwatubuntu .
 ```
 
 This should build the base image. Now, to install *all* of GWAT, simply run
 
 ```sh
-docker build -f Dockerfile.gwat.bayesship -t gwatbuild .
+docker build -f GWATdocker/Dockerfile.gwat.bayesship -t gwatbuild .
 ```
 
 This will simply use your local GWAT code and install it within the image, and then remove the codes used to build it. You should now have a not-so-heavy image of GWAT. If your plan is to develop GWAT code, i.e. modify it, then follow the instructions below.
@@ -58,7 +58,7 @@ mkdir build
 cd build
 # Make sure it is clean
 rm -rf *
-# Set up the installation
+# Configure the installation
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../
 # Compile across 4 cores. It is a large code
 make -j4
@@ -66,6 +66,6 @@ make -j4
 make install
 ```
 
-"Developing" implies that you make changes to the code, and re-run the installation. If modifying existing files, starting only from the `make` line should suffice; if modifying it substantially, or creating new files, start from the `cmake` line.
+When modifying existing files, starting only from the `make` line should suffice; if modifying it substantially, or creating new files, start from the `cmake` line to make sure dependencies among files are resolved and configured.
 
 If you wish to use VS Code to make the modifications and test the software, one can start a detached image with the options `-di`. With the `Dev Containers` extension installed in VSC, you can attach to this image and play with it like any other VSC project.
